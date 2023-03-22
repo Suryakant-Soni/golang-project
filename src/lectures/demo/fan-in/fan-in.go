@@ -13,7 +13,9 @@ import (
 	_ "image/png"
 	"log"
 	"os"
+	"reflect"
 	"strings"
+	"sync"
 
 	"github.com/chai2010/webp"
 	"github.com/google/uuid"
@@ -37,7 +39,27 @@ func makeWork(base64Images ...string) <-chan string {
 	// with the images by the goroutine
 	return out
 }
+func fanIn[T any](channels ...<-chan T) <-chan T {
+	fmt.Println("channels:", reflect.TypeOf(channels[0]))
+	var wg sync.WaitGroup
 
+	out := make(chan T)
+	wg.Add(len(channels))
+	for _, ch := range channels {
+		go func(in <-chan T) {
+			for i := range in {
+				out <- i
+			}
+			wg.Done()
+		}(ch)
+	}
+	// need a routine which will wait for all go routine to finish
+	go func() {
+		wg.Wait()
+		close(out)
+	}()
+	return out
+}
 func pipeline[I any, O any](input <-chan I, process func(I) O) <-chan O {
 	out := make(chan O)
 	go func() {
@@ -76,9 +98,21 @@ func saveToDisk(imgBuf bytes.Buffer) string {
 
 func main() {
 	base64Images := makeWork(img1, img2, img3)
-	rawImages := pipeline(base64Images, base64ToRawImage)
-	webpImages := pipeline(rawImages, encodeToWebp)
-	filenames := pipeline(webpImages, saveToDisk)
+	rawImage1 := pipeline(base64Images, base64ToRawImage)
+	rawImage2 := pipeline(base64Images, base64ToRawImage)
+	rawImage3 := pipeline(base64Images, base64ToRawImage)
+	rawImages := fanIn(rawImage1,rawImage2, rawImage3)
+
+	webpImage1 := pipeline(rawImages, encodeToWebp)
+	webpImage2 := pipeline(rawImages, encodeToWebp)
+	webpImage3 := pipeline(rawImages, encodeToWebp)
+	webpImages := fanIn(webpImage1,webpImage2,webpImage3)
+
+	filename1 := pipeline(webpImages, saveToDisk)
+	filename2 := pipeline(webpImages, saveToDisk)
+	filename3 := pipeline(webpImages, saveToDisk)
+	filenames := fanIn(filename1,filename2,filename3)
+
 	for name := range filenames {
 		fmt.Println(name)
 	}
