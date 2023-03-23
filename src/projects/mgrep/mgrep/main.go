@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"mgrep/worker"
 	"mgrep/worklist"
 	"os"
 	"path/filepath"
@@ -28,15 +29,23 @@ func discoverDirs(wl *worklist.Worklist, path string) {
 	}
 
 }
-var args struct{
+
+var args struct {
 	SearchTerm string `arg:"positional,required"`
-	SearchDir string `arg:"positional"`
-
+	SearchDir  string `arg:"positional"`
 }
+
 func main() {
-arg.MustParse(&args)
+	// parsing is mandatory
+	arg.MustParse(&args)
 
-var workersWg sync.WaitGroup
+	var workersWg sync.WaitGroup
+	// getting a new worklist with buffer of 100
+wl := worklist.New(100)
+// this is  new channel where workers dump the result
+results := make(chan worker.Result, 100)
+numWorkers := 10
 
+workersWg
 
 }
