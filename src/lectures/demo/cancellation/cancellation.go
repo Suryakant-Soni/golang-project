@@ -79,7 +79,6 @@ func main() {
 	for name := range filenames {
 		fmt.Println(name)
 	}
-
 }
 
 const img1 = `

@@ -13,7 +13,7 @@ type Worklist struct {
 func (w *Worklist) Add(work Entry) {
 	w.jobs <- work
 }
-// find out the next job to be done
+// find out the next job to be done reading the channel here
 func (w *Worklist) Next() Entry {
 	j := <-w.jobs
 	return j

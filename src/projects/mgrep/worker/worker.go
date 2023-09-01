@@ -33,6 +33,7 @@ func FindInFile(path string, find string) *Results {
 			r := NewResult(scanner.Text(), lineNum, path)
 			results.Inner = append(results.Inner, r)
 		}
+		lineNum += 1
 	}
 	if len(results.Inner) == 0 {
 		return nil
